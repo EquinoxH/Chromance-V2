@@ -21,14 +21,14 @@ namespace Chromance{
     NeoPixel strip2(4, 168);
     NeoPixel strip3(6, 154);
 
-    std::vector<Trail*> trails;
+    std::vector<SingleTrail*> trails;
     std::vector<SlowTrail> slowTrails;
     std::vector<DoubleTrail*> doubleTrails;
     std::vector<Segment> segments;
     std::vector<Dot> dots;
 
-    std::vector<Trail*> deadTrails;
-    std::map<Trail*, int> trailFadesRemainingMap;
+    std::vector<SingleTrail*> deadTrails;
+    std::map<SingleTrail*, int> trailFadesRemainingMap;
 
     std::vector<DoubleTrail*> deadDoubleTrails;
     std::map<DoubleTrail*, int> doubleTrailFadesRemainingMap;
@@ -36,7 +36,7 @@ namespace Chromance{
     // Create Shape Functions
 
     void createTrail(Colour colour = Colours::red, int start = 0, int lifeTime = 140, bool isImmortal = false, double speed = 1, int length = 14, bool hasDeathEffect = false, bool mergeColours = true){
-        trails.push_back(new Trail(colour, start, lifeTime, isImmortal, speed, length, hasDeathEffect, mergeColours));
+        trails.push_back(new SingleTrail(colour, start, lifeTime, isImmortal, speed, length, hasDeathEffect, mergeColours));
     }
 
     void createSlowTrail(Colour colour = Colours::red, int start = 0, int lifeTime = 140, bool isImmortal = false, int speed = 10, bool hasDeathEffect = false, bool mergeColours = true){
@@ -151,7 +151,7 @@ namespace Chromance{
     namespace{
         void updateTrails(){
             for(int i = 0; i < trails.size(); i++){
-                Trail* trail = trails[i];
+                SingleTrail* trail = trails[i];
                 trail->moveWithSpeed();
                 if(trail->shouldDie()){
                     if(trail->hasDeathEffect()){
@@ -216,7 +216,7 @@ namespace Chromance{
         void fadeDeadTrails(){
             if(debugDeadTrails) printf("Fading %d dead trails\n", deadTrails.size());
             for(int i =  0; i < deadTrails.size(); i++){
-                Trail* trail = deadTrails[i];
+                SingleTrail* trail = deadTrails[i];
 
                 trail->fade();
                 --trailFadesRemainingMap[trail];

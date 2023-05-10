@@ -1,28 +1,15 @@
 #pragma once
 
 #include "colours.h"
+#include "shapes/trail/trail.h"
 
-class SlowTrail{
+class SlowTrail : public Trail{
 private:
-    Colour colour;
-    int currentPosition;
     int targetPosition;
-    int lifeTime;
-    bool isAtStart;
-    bool immortal;
-    int direction;
-    int speed;
     int progress;
-    bool deathEffect;
-    bool mergeMode;
 
 public:
     SlowTrail(Colour _colour, int _start, int _lifeTime, int _immortal, int _speed, bool _deathEffect, bool _mergeMode);
-    void move();
-    void show();
-
-    int getCurrentPosition();
-    int getCurrentDirection();
-    bool shouldDie();
-    bool hasDeathEffect();
+    void move() override;
+    void show() override;
 };

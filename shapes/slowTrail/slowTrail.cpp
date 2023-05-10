@@ -11,7 +11,7 @@ SlowTrail::SlowTrail(Colour _colour, int _start, int _lifeTime, int _immortal, i
     targetPosition = -1;
     direction = _start % 2 == 0 ? 1 : -1;
     lifeTime = _lifeTime;
-    isAtStart = true;
+    isAtStartOfSegment = true;
     immortal = _immortal;
     speed = _speed;
     progress = 0;
@@ -27,7 +27,7 @@ void SlowTrail::move(){
     // Find Next Position
     bool arrivedAtHub = false;
     if(targetPosition == -1){
-        if(Hubs::ledIsStartOrEnd(currentPosition) && !isAtStart){
+        if(Hubs::ledIsStartOrEnd(currentPosition) && !isAtStartOfSegment){
             printf("Arrived at hub\n");
             Hub currentHub = Hubs::getConnectedHub(currentPosition);
             targetPosition = currentHub.getRandomLEDExcept(currentPosition);
@@ -45,13 +45,13 @@ void SlowTrail::move(){
     Chromance::setLEDColour(targetPosition, colour.getColourAtBrightness(progress / 100.0));
 
     if(progress == 100){
-        isAtStart = Hubs::ledIsStartOrEnd(currentPosition) && Hubs::ledIsStartOrEnd(targetPosition);
+        isAtStartOfSegment = Hubs::ledIsStartOrEnd(currentPosition) && Hubs::ledIsStartOrEnd(targetPosition);
 
         currentPosition = targetPosition;
         targetPosition = -1; 
         progress = 0;
 
-        if(isAtStart) direction = currentPosition  % 2 == 0 ? 1 : -1;
+        if(isAtStartOfSegment) direction = currentPosition  % 2 == 0 ? 1 : -1;
         if(!immortal) --lifeTime;
     }
 }
@@ -63,20 +63,4 @@ void SlowTrail::show(){
     else{
         Chromance::setLEDColour(currentPosition, colour); // check this
     }
-}
-
-int SlowTrail::getCurrentPosition(){
-    return currentPosition;
-}
-
-int SlowTrail::getCurrentDirection(){
-    return direction;
-}
-
-bool SlowTrail::shouldDie(){
-    return lifeTime <= 0;
-}
-
-bool SlowTrail::hasDeathEffect(){
-    return deathEffect;
 }

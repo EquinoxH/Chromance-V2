@@ -33,6 +33,8 @@ chromance.h
     shapes/segment/segment.cpp
     shapes/trail/trail.h
     shapes/trail/trail.cpp
+    shapes/singleTrail/singleTrail.h
+    shapes/singleTrail/singleTrail.cpp
     shapes/slowTrail/slowTrail.h
     shapes/slowTrail/slowTrail.cpp
     shapes/doubleTrail/doubleTrail.h

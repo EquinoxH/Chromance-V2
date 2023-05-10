@@ -6,7 +6,7 @@
 #include "neopixel.h"
 #include "colours.h"
 
-#include "shapes/trail/trail.h"
+#include "shapes/singleTrail/singleTrail.h"
 #include "shapes/slowTrail/slowTrail.h"
 #include "shapes/doubleTrail/doubleTrail.h"
 #include "shapes/segment/segment.h"
@@ -33,14 +33,14 @@ namespace Chromance{
 
     extern int updateCount;
 
-    extern std::vector<Trail*> trails;
+    extern std::vector<SingleTrail*> trails;
     extern std::vector<SlowTrail> slowTrails;
     extern std::vector<DoubleTrail*> doubleTrails;
     extern std::vector<Segment> segments;
     extern std::vector<Dot> dots;
 
-    extern std::vector<Trail*> deadTrails;
-    extern std::map<Trail*, int> trailFadesRemainingMap;
+    extern std::vector<SingleTrail*> deadTrails;
+    extern std::map<SingleTrail*, int> trailFadesRemainingMap;
 
     extern std::vector<DoubleTrail*> deadDoubleTrails;
     extern std::map<DoubleTrail*, int> doubleTrailFadesRemainingMap; 

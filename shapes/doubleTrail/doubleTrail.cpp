@@ -7,10 +7,10 @@
 
 // Constructor
 
-DoubleTrail::DoubleTrail(Colour _colour, int _start, int _trailLength, int _speed, int _lifeTime, bool _immortal, bool _deathEffect, bool _mergeMode){
+DoubleTrail::DoubleTrail(Colour _colour, int _start, int _length, int _speed, int _lifeTime, bool _immortal, bool _deathEffect, bool _mergeMode){
     colour = _colour;
     currentPosition = _start;
-    trailLength = _trailLength;
+    length = _length;
     speed = _speed;
     lifeTime = _lifeTime;
     immortal = _immortal;
@@ -19,8 +19,8 @@ DoubleTrail::DoubleTrail(Colour _colour, int _start, int _trailLength, int _spee
 
     positionHistory.push_back(currentPosition);
     direction = _start % 2 == 0 ? 1 : -1;
-    isAtStart = true;
-    deviation = trailLength / 8.0;
+    isAtStartOfSegment = true;
+    deviation = length / 8.0;
 }
 
 // Public Functions
@@ -33,20 +33,20 @@ void DoubleTrail::moveWithSpeed(){
 
 void DoubleTrail::move(){
     int nextPosition = 0;
-    if (Hubs::ledIsStartOrEnd(currentPosition) && !isAtStart){
+    if (Hubs::ledIsStartOrEnd(currentPosition) && !isAtStartOfSegment){
         Hub currentHub = Hubs::getConnectedHub(currentPosition);
         nextPosition = currentHub.getRandomLEDExcept(currentPosition);
         direction = nextPosition % 2 == 0 ? 1 : -1;
-        isAtStart = true;
+        isAtStartOfSegment = true;
     }
     else{
         nextPosition = currentPosition + direction;
-        isAtStart = false;
+        isAtStartOfSegment = false;
     }
 
     currentPosition = nextPosition;
     positionHistory.push_back(currentPosition);
-    if(positionHistory.size() > trailLength){
+    if(positionHistory.size() > length){
         positionHistory.erase(positionHistory.begin());
     }
 
@@ -101,37 +101,20 @@ void DoubleTrail::fade(){
     }
 }
 
-int DoubleTrail::getCurrentPosition(){
-    return currentPosition;
-}
-
-int DoubleTrail::getCurrentDirection(){
-    return direction;
-}
-
-bool DoubleTrail::shouldDie(){
-    return lifeTime == 0;
-}
-
-bool DoubleTrail::hasDeathEffect(){
-    return deathEffect;
-}
-
 // Private Functions
 
 double DoubleTrail::getBrightnessAtPosition(int index){
-    // double indexAsDouble = (double)index;
-    // double a = (double)trailLength / 2.0;
-    // return (-((indexAsDouble - a)*(indexAsDouble - a)) / (a * a)) + 1.0;
-    double mean = (trailLength - 1) / 2.0;
+    double mean = (length - 1) / 2.0;
     double x = index - mean;
     double exponent = -0.5 * pow(x / deviation, 2);
     double amplitude = 1.0 / (deviation * sqrt(2 * M_PI));
-    double brightness = amplitude * exp(exponent);  // apply the Gaussian function
-    if (index == 0 || index == trailLength - 1) {
+    double brightness = amplitude * exp(exponent);
+    
+    if (index == 0 || index == length - 1) {
         brightness = 0.0;
     } else {
         brightness /= amplitude;
     }
+
     return brightness;
 }
