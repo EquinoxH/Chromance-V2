@@ -1,26 +1,7 @@
 #include "neopixel.h"
 #include "colours.h"
 #include "chromance.h"
-
-#include "pico/stdlib.h"
-#include "pico/cyw43_arch.h"
-
-// #include <stdio.h>
-// #include <stdlib.h>
-
-// #include "pico/stdlib.h"
-// #include "hardware/pio.h"
-// #include "hardware/clocks.h"
-// #include "ws2812.pio.h"
-
-// void blink(int num){
-//     for(int i = 0; i < num; i++) {
-//         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-//         sleep_ms(250);
-//         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-//         sleep_ms(250);
-//     }
-// }
+#include "debugTools.h"
 
 // Constructor
 
@@ -32,8 +13,10 @@ NeoPixel::NeoPixel(int gpioPin, int leds){
     for(int i = 0; i < numLEDs; i++){
         trueColours.push_back(Colours::off);
         pixelBrightnessValues.push_back(1);
+        coloursToSum.push_back(std::vector<Colour>());
     }
 
+    initialisePin();
     writeUpdates();
 }
 
@@ -58,7 +41,10 @@ double NeoPixel::getActualCurrent(){
 }
 
 Colour NeoPixel::getPixelColour(int index){
-    return trueColours[index];
+    switch(Chromance::displayMode){
+        case Chromance::absolute: return trueColours[index];
+        case Chromance::blend: return Colours::sumColours(coloursToSum[index]);
+    }
 }
 
 double NeoPixel::getPixelBrightness(int index){
@@ -78,25 +64,51 @@ void NeoPixel::setStripBrightness(double brightness){
     stripBrightness = brightness;
 }
 
+void NeoPixel::addToPixelColour(int index, Colour colour){
+    coloursToSum[index].push_back(colour);
+}
+
 void NeoPixel::off(){
     fill(Colours::off);
 }
 
 void NeoPixel::test(){
-    fill(Colours::test1);
-}
-
-void NeoPixel::test2(){
-    fill(Colours::test2);
+    fill(Colours::test);
 }
 
 void NeoPixel::writeUpdates(){
-    initialisePin();
+    setActivePin();
     sleep_ms(1);
     for(int i = 0; i < numLEDs; i++){
         double pixelBrightness = getPixelBrightness(i);
         Colour colour = getPixelColour(i).getColourAtBrightness(pixelBrightness * stripBrightness);
         putPixel(urgbToU32(colour));
+    }
+
+    if(debugBlendMode && pin == 0){
+        printf("coloursToSum:\n");
+        printf("[\n");
+        for (size_t i = 0; i < coloursToSum.size(); i++) {
+            printf("  [\n");
+            for (size_t j = 0; j < coloursToSum[i].size(); j++) {
+                const auto& colour = coloursToSum[i][j];
+                printf("    {\"r\": %d, \"g\": %d, \"b\": %d}", colour.r, colour.g, colour.b);
+                if (j < coloursToSum[i].size() - 1) {
+                    printf(",");
+                }
+                printf("\n");
+            }
+            printf("  ]");
+            if (i < coloursToSum.size() - 1) {
+                printf(",");
+            }
+            printf("\n");
+        }
+        printf("]\n");
+    }
+
+    for(std::vector<Colour> colours: coloursToSum){
+        colours.clear();
     }
 }
 
@@ -108,10 +120,21 @@ void NeoPixel::fill(Colour colour){
 
 void NeoPixel::fadePixel(int index, double amount){
     double brightness = getPixelBrightness(index);
-    if(brightness < amount) return;
+    if(brightness <= 0) return;
 
     brightness -= amount;
-    setPixelBrightness(index, brightness);
+    if(brightness > 0){
+        setPixelBrightness(index, brightness);
+    }
+    else{
+        setPixelColour(index, Colours::off);
+    }
+}
+
+void NeoPixel::minorFadeAll(){
+    for(int i = 0; i < numLEDs; i++){
+        fadePixel(i, 0.02);
+    }
 }
 
 void NeoPixel::fadeAll(){
@@ -122,7 +145,7 @@ void NeoPixel::fadeAll(){
 
 void NeoPixel::superFadeAll(){
     for(int i = 0; i < numLEDs; i++){
-        fadePixel(i, 0.9);
+        fadePixel(i, 0.5);
     }
 }
 
@@ -131,8 +154,13 @@ void NeoPixel::superFadeAll(){
 void NeoPixel::initialisePin(){
     PIO pio = pio0;
     int sm = 0;
-    uint offset = pio_add_program(pio, &ws2812_program);
+    storedOffset = pio_add_program(pio, &ws2812_program);
+    uint offset = storedOffset;
     ws2812_program_init(pio, sm, offset, pin, 800000, false);
+}
+
+void NeoPixel::setActivePin(){
+    ws2812_program_init(pio0, 0, storedOffset, pin, 800000, false);
 }
 
 void NeoPixel::putPixel(uint32_t pixelRGB){

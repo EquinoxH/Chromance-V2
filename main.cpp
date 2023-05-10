@@ -1,50 +1,69 @@
-#include "pico/stdlib.h"
-#include "pico/cyw43_arch.h"
+#include "main.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "pico/stdlib.h"
-#include "hardware/pio.h"
-#include "hardware/clocks.h"
-#include "ws2812.pio.h"
-
-#include "chromance.h"
-#include "neopixel.h"
-#include "colours.h"
-
-void blink(){
-    while (true) {
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-        sleep_ms(250);
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-        sleep_ms(250);
-    }
-}
+std::string firstProfile = "clouds";
 
 int main() {
-    //set_sys_clock_48();
+    initialisePico();
+    doUSBWarning();
+    initialiseChromance();
+
+    // Chromance::displayMode = Chromance::blend;
+    // for(int i = 0; i < 100; i++){
+    //     Chromance::addToLEDColour(i, Colours::red);
+    //     Chromance::addToLEDColour(i, Colours::blue);
+    // }
+
+    // Chromance::writeUpdates();
+    // return 0;
+
+    // Chromance::createDoubleTrail(Colours::blue, 0, 40, 1, 140, true, false, true);
+    // Chromance::createDoubleTrail(Colours::red, 0, 40, 1, 140, true, false, true);
+    // while(true){
+    //     Chromance::doUpdate();
+    // }
+
+    std::string lastProfile;
+    auto profileStartTime = std::chrono::high_resolution_clock::now();
+    while(!server->complete){
+        Chromance::doUpdate();
+        
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        double elapsed = std::chrono::duration_cast<std::chrono::seconds>(currentTime - profileStartTime).count();
+
+        if(elapsed >= 60){
+            std::string nextProfile = ProfileManager::getRandomExcept(lastProfile);
+            ProfileManager::setProfile(nextProfile);
+            profileStartTime = std::chrono::high_resolution_clock::now();
+        }
+    }
+    
+    printf("Code End Reached\n");
+    return 0;
+}
+
+void initialisePico(){
     stdio_init_all();
     if (cyw43_arch_init()) {
         printf("Wi-Fi init failed");
-        return -1;
     }
-    
-    bool isBlue = false;
-    int updateCount = 0;
-    while(true){
-        if(isBlue){
-            Chromance::test();
-            isBlue = false;
-        }
-        else {
-            Chromance::test2();
-            isBlue = true;
-        }
+}
 
-        Chromance::writeUpdates();
-        ++updateCount;
-        if(updateCount == 2) blink();
-        sleep_ms(100);
+void doUSBWarning(){
+    DebugTools::blinkNumTimes(2);
+    sleep_ms(5000);
+    printf("Printing Working\n");
+}
+
+void initialiseChromance(){
+    if(debugGeneral) printf("Intialising\n");
+    Hubs::initialiseHubs();
+    Random::initialise();
+    ProfileManager::initialise();
+    ProfileManager::setProfile(firstProfile);
+    if(debugGeneral) printf("Intialised\n");
+
+    if(wifiMode){
+        connectToWifi();
+        startTCPServer();
     }
 }
